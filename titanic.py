@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LogisticRegression
 import operator
 
 
@@ -112,4 +112,15 @@ def create_random_forest_csv():
     df_test['Survived'] = model.predict(df_test[features])
     create_prediction_csv(df_test, model)
 
+def create_logistic_regression_csv():
+    features = ["Age", "Pclass", "Sex", "SibSp", "Parch", "Fare", "Embarked"]
+    X_train, X_test, y_train, y_test = set_features(features)
 
+    model = LogisticRegression()
+    model.fit(X_train, y_train)
+    # print(model.score(X_test,y_test))
+    df_test = read_test_data()
+    df_test['Survived'] = model.predict(df_test[features])
+    create_prediction_csv(df_test, model)
+
+create_logistic_regression_csv()
