@@ -1,8 +1,10 @@
-import numpy as np 
+import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LinearRegression
 import operator
 
 
@@ -14,15 +16,18 @@ def prepare_general_data():
     y = df['Survived']
     return df, y
 
-def get_knn_score(X_train, X_test, y_train, y_test,neighbors = 5):
-    model = KNeighborsClassifier(n_neighbors = neighbors)
+
+def get_knn_score(X_train, X_test, y_train, y_test, neighbors=5):
+    model = KNeighborsClassifier(n_neighbors=neighbors)
     model.fit(X_train, y_train)
     knn_score = model.score(X_test, y_test)
     return knn_score
-    
+
+
 def set_features(features):
     x = df[features]
     return train_test_split(x, y, random_state=0)
+
 
 def get_one_knn_scores(column):
     X_train, X_test, y_train, y_test = set_features(column)
@@ -63,24 +68,48 @@ def get_all_knn_scores():
 
 df, y = prepare_general_data()
 
+knn_scores = {}
+
+
 def explore_knn():
-    knn_scores = {}
     get_all_knn_scores()
     print(knn_scores)
     maximum = max(knn_scores.items(), key=operator.itemgetter(1))
-    print(maximum[0],maximum[1])
+    print(maximum[0], maximum[1])
+
+
+def read_test_data():
+    df_test = pd.read_csv('test.csv')
+    df_test['Fare'].replace(np.NAN, 0, inplace=True)
+    df_test.replace(np.NAN, df_test['Age'].mean(), inplace=True)
+    df_test['Sex'] = df_test['Sex'].astype("category").cat.codes
+    df_test['Embarked'] = df_test['Embarked'].astype("category").cat.codes
+    return df_test
+
+
+def create_prediction_csv(df_test, model):
+    df_test = df_test[['PassengerId', 'Survived']]
+    df_test.to_csv(path_or_buf='result.csv', index=False)
 
 
 def create_knn_prediction_csv():
     X_train, X_test, y_train, y_test = set_features(['Fare'])
-    model = KNeighborsClassifier(n_neighbors = 9)
+    model = KNeighborsClassifier(n_neighbors=9)
     model.fit(X_train, y_train)
-
-    df_test = pd.read_csv('test.csv')
-    df_test['Fare'].replace(np.NAN,0, inplace=True)
-    df_test['Sex'] = df_test['Sex'].astype("category").cat.codes
+    df_test = read_test_data()
     df_test['Survived'] = model.predict(df_test[['Fare']])
-    df_test = df_test[['PassengerId','Survived']]
-    df_test.to_csv(path_or_buf='result.csv',index=False)
+    create_prediction_csv(df_test, model)
 
-create_knn_prediction_csv()
+
+def create_random_forest_csv():
+    features = ["Age", "Pclass", "Sex", "SibSp", "Parch", "Fare", "Embarked"]
+    X_train, X_test, y_train, y_test = set_features(features)
+
+    model = RandomForestClassifier(
+        n_estimators=32, max_depth=6, min_samples_split=0.2, min_samples_leaf=0.2, random_state=1)
+    model.fit(X_train, y_train)
+    df_test = read_test_data()
+    df_test['Survived'] = model.predict(df_test[features])
+    create_prediction_csv(df_test, model)
+
+
