@@ -14,7 +14,7 @@ def prepare_general_data():
     y = df['Survived']
     return df, y
 
-def get_knn_score(X_train, X_test, y_train, y_test,neighbors = 9):
+def get_knn_score(X_train, X_test, y_train, y_test,neighbors = 5):
     model = KNeighborsClassifier(n_neighbors = neighbors)
     model.fit(X_train, y_train)
     knn_score = model.score(X_test, y_test)
@@ -58,16 +58,29 @@ def get_all_knn_scores():
     get_one_knn_scores(['SibSp', 'Embarked'])
     get_one_knn_scores(['Fare', 'Sex'])
     get_one_knn_scores(['Fare', 'Embarked'])
-
     get_one_knn_scores(['Sex', 'Embarked'])
 
 
 df, y = prepare_general_data()
-# X_train, X_test, y_train, y_test = set_features()
 
-knn_scores = {}
-get_all_knn_scores()
+def explore_knn():
+    knn_scores = {}
+    get_all_knn_scores()
+    print(knn_scores)
+    maximum = max(knn_scores.items(), key=operator.itemgetter(1))
+    print(maximum[0],maximum[1])
 
-maximum = max(knn_scores.items(), key=operator.itemgetter(1))
-print(maximum[0],maximum[1])
 
+def create_knn_prediction_csv():
+    X_train, X_test, y_train, y_test = set_features(['Fare'])
+    model = KNeighborsClassifier(n_neighbors = 9)
+    model.fit(X_train, y_train)
+
+    df_test = pd.read_csv('test.csv')
+    df_test['Fare'].replace(np.NAN,0, inplace=True)
+    df_test['Sex'] = df_test['Sex'].astype("category").cat.codes
+    df_test['Survived'] = model.predict(df_test[['Fare']])
+    df_test = df_test[['PassengerId','Survived']]
+    df_test.to_csv(path_or_buf='result.csv',index=False)
+
+create_knn_prediction_csv()
