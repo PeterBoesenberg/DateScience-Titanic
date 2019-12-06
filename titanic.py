@@ -5,14 +5,15 @@ from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
+import xgboost as xgb
 import operator
 
 
 def prepare_general_data():
     df = pd.read_csv('train.csv')
-    df = df.dropna()
     df['Sex'] = df['Sex'].astype("category").cat.codes
     df['Embarked'] = df['Embarked'].astype("category").cat.codes
+    df = df.drop(['PassengerId', 'Ticket', 'Cabin'], axis=1)
     y = df['Survived']
     return df, y
 
@@ -89,7 +90,7 @@ def read_test_data():
 
 def create_prediction_csv(df_test, model):
     df_test = df_test[['PassengerId', 'Survived']]
-    df_test.to_csv(path_or_buf='result.csv', index=False)
+    df_test.to_csv(path_or_buf='result.csv', index=False, float_format='%.f')
 
 
 def create_knn_prediction_csv():
@@ -123,4 +124,22 @@ def create_logistic_regression_csv():
     df_test['Survived'] = model.predict(df_test[features])
     create_prediction_csv(df_test, model)
 
-create_logistic_regression_csv()
+#create_logistic_regression_csv()
+def create_xgboost_csv():
+    features = ["Age", "Sex"]
+    X_train, X_test, y_train, y_test = set_features(features)
+   
+
+    model = xgb.XGBRegressor(
+      
+        objective = 'binary:hinge'
+    ) 
+
+    model.fit(X_train, y_train)
+    
+    df_test = read_test_data()
+    df_test['Survived'] = model.predict(df_test[features])
+    create_prediction_csv(df_test, model)
+
+df,y  = prepare_general_data()
+df.info()
